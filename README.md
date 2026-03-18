@@ -15,6 +15,6 @@ project-root/
 ├── 💻 [Windows 실행] run_windows.py   # 02, 03, 04번 폴더를 통합 실행
 │
 ├── 🐍 01_kali_agent/        # [Kali] 패킷 스니핑 및 소켓 전송 (Sender)
-├── 💻 02_window_backend/    # [Windows] 소켓 수신 및 Snort 룰 생성 로직
-├── 🧠 03_ai_analyzer/       # [Windows] GPT API 분석 및 위협 판단
+├── 💻 02_window_backend/    # [Windows] 소켓 수신 및 메인 컨트롤러
+├── 🧠 03_ai_analyzer/       # [Windows] GPT API 분석 및 위협 판단 및 Snort 룰 생성 로직
 └── 📊 04_gradio_visual/     # [Windows] Gradio 통합 대시보드 및 리포트
