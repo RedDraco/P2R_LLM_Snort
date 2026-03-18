@@ -241,7 +241,10 @@ done
 | 🛡️ Snort 룰 | LLM이 새로 생성한 Snort 룰 목록 (복사 기능 포함) |
 
 ---
-![uml_analyzer_dashboard](https://github.com/user-attachments/assets/51962445-e58f-4c7e-b0c1-cb4d507ca10d)![uml_kali_backend](https://github.com/user-attachments/assets/2421f367-cc70-4c7d-9c78-4622068a2e43)![sequence_diagram](https://github.com/user-attachments/assets/84991694-5925-474d-b120-9ab7f97625d8)
+![uml_kali_backend](https://github.com/user-attachments/assets/2421f367-cc70-4c7d-9c78-4622068a2e43)
+![uml_analyzer_dashboard](https://github.com/user-attachments/assets/51962445-e58f-4c7e-b0c1-cb4d507ca10d)
+---
+![sequence_diagram](https://github.com/user-attachments/assets/84991694-5925-474d-b120-9ab7f97625d8)
 ---
 
 ## 🔒 보안 주의사항
