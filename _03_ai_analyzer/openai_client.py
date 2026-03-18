@@ -36,7 +36,7 @@ def _load_api_key() -> str:
         - .env는 절대 git에 커밋하지 않는다 (.gitignore에 등록 필수)
         - 소스코드에 키를 직접 입력하지 않는다
     """
-    # 프로젝트 루트의 .env 탐색 (현재 파일 기준 2단계 상위)
+    # 프로젝트 루트의 .env 탐색 (현재 파일 기준 1단계 상위)
     env_path = os.path.join(
         os.path.dirname(__file__), "..", ".env"
     )
