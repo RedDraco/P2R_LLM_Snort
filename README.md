@@ -17,7 +17,6 @@ project-root/
 │
 ├── run_kali.py                   ← [Kali] 패킷 수집 에이전트 실행
 ├── run_windows.py                ← [Windows] 서버 + 대시보드 실행
-├── 서버시작.bat                   ← [Windows] 더블클릭 실행용
 │
 ├── _01_kali_agent/               ← [Kali] 패킷 스니핑 및 소켓 전송
 │   ├── __init__.py
