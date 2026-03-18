@@ -49,6 +49,7 @@ SOCKET_HOST          = os.getenv("SOCKET_HOST", "0.0.0.0")
 SOCKET_PORT          = int(os.getenv("SOCKET_PORT", "9999"))
 OPENAI_MODEL         = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 COMMUNITY_RULES_PATH = os.getenv(
+    "COMMUNITY_RULES",
     os.path.join(ROOT_DIR, "community.rules"),
 )
 GRADIO_PORT = int(os.getenv("GRADIO_PORT", "7860"))

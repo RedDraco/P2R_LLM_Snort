@@ -12,7 +12,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 # ── .env 로드 ─────────────────────────────────────
-load_dotenv(dotenv_path=os.path.join(ROOT_DIR, ".env"))
+load_dotenv(dotenv_path=os.path.join(ROOT_DIR, "..", ".env"))
 
 INTERFACE  = os.getenv("INTERFACE")
 BPF_FILTER = os.getenv("BPF_FILTER", "tcp port 80")
