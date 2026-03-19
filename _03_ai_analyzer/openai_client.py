@@ -92,12 +92,12 @@ class OpenAIClient:
     OpenAI Chat Completions API 래퍼.
 
     - API 키를 .env에서 로드
-    - Rate Limit 쿨타임 적용 (기본 10초)
+    - Rate Limit 쿨타임 적용 (기본 10초) -> 3초로 수정
     - 일시적 오류 시 최대 3회 재시도
     """
 
     # LLM 호출 간 최소 간격(초) — 필요에 따라 조정
-    RATE_LIMIT_INTERVAL = 10.0
+    RATE_LIMIT_INTERVAL = 3.0
     # 재시도 횟수
     MAX_RETRIES = 3
     # 재시도 대기 시간(초)

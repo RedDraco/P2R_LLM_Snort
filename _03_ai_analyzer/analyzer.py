@@ -67,7 +67,7 @@ class Analyzer:
                 "dst_ip":      str,
                 "method":      str,
                 "uri":         str,
-                "payload":     str,   # 전처리된 페이로드
+                "payload":     str,
                 "source":      "local" | "llm" | "rate_limited" | "error",
                 "is_attack":   bool,
                 "attack_name": str,
@@ -77,16 +77,65 @@ class Analyzer:
                 "reason":      str,
             }
         """
+        uri = data.get("uri", "")
         clean_payload = data.get("clean_payload", "")
 
-        # ── 1차: 로컬 시그니처 매칭 ──
+        # 1차: 로컬 시그니처 매칭
         matched_rule = self._matcher.match(clean_payload)
         if matched_rule:
             return self._build_local_result(data, matched_rule)
 
-        # ── 2차: LLM 분석 ──
+        # 2차: 정적 리소스 화이트리스트
+        safe_extensions = (
+            ".jpg", ".jpeg", ".png", ".gif", ".css",
+            ".js", ".woff", ".ico", ".svg"
+        )
+
+        is_static_ext = any(uri.lower().endswith(ext) for ext in safe_extensions)
+        has_no_params = "?" not in uri and "=" not in clean_payload
+
+        if is_static_ext and has_no_params:
+            return self._build_error_result(
+                data, "skip", "Safe Static Resource (No Params)"
+            )
+
+        # 3차: 위험 징후 스코어링
+        if not self._is_suspicious(uri, clean_payload):
+            return self._build_error_result(
+                data, "skip", "Normal traffic (Low risk score)"
+            )
+
+        # 4차: LLM 분석
         return self._llm_analyze(data)
 
+    def _is_suspicious(self, uri: str, payload: str) -> bool:
+        """
+        패킷이 AI 분석을 받을 만큼 의심스러운 요소가 있는지 검사한다.
+        시연을 위해 임계치를 대폭 낮춤 (특수문자 1개라도 있으면 AI 분석)
+        """
+        danger_patterns = [
+            "select", "union", "insert", "drop", "--", "case when", "or", "and", "'" ,
+            "<script", "alert(", "onerror", "eval(",
+            "../", "/etc/", "boot.ini", ".exe",
+            "<?php", "${", "getruntime"
+        ]
+
+        target = (uri + payload).lower()
+
+        # 1. 위험 키워드 포함 시 무조건 AI 분석
+        if any(p in target for p in danger_patterns):
+            return True
+
+        # 2. 특수문자 임계치 완화 (특수문자가 1개라도 있으면 AI 분석으로 토스)
+        special_chars = set("!@#$%^&*()[]{};:'\",.<>?/\\|")
+        special_count = sum(1 for char in target if char in special_chars)
+        
+        if special_count > 0:  # 25% 비율 대신 '존재 여부'로 변경
+            return True
+
+        return False
+
+   
     # ──────────────────────────────────────────────
     # Internal — 로컬 결과 생성
     # ──────────────────────────────────────────────

@@ -5,11 +5,11 @@
 # OpenAI SDK
 openai>=1.30.0
 
-# .env 파일 로드 (API 키 보안 관리)
+# Load .env file (secure API key management)
 python-dotenv>=1.0.0
 
-# 패킷 스니핑 (Kali 전용 — Windows에서는 불필요)
+# Packet sniffing (primarily for Kali Linux; usually unnecessary on Windows)
 scapy>=2.5.0
 
-# Gradio 대시보드
+# Gradio dashboard
 gradio>=4.36.0

@@ -22,19 +22,26 @@ logger = logging.getLogger(__name__)
 
 def preprocess_payload(raw_payload: str) -> str:
     """
-    L7 HTTP 페이로드 문자열을 정제한다.
-
-    처리 순서:
-      1. URL 디코딩 (%XX → 실제 문자)
-      2. 개행·탭 등 불필요한 공백 제거
-      3. NULL 바이트 제거
+    L7 HTTP 페이로드 문자열을 다중 디코딩 및 정제한다.
     """
-    # 1) URL 디코딩 (이중 인코딩 대응을 위해 2회 적용)
-    decoded = urllib.parse.unquote(urllib.parse.unquote(raw_payload))
+    # 1) 다중 URL 디코딩 (변화가 없을 때까지 무한 루프 방지용 최대 횟수 설정 권장)
+    prev_payload = ""
+    curr_payload = raw_payload
+    
+    # 보안상 무한 루프 방지를 위해 최대 10회 정도로 제한을 두는 것이 안전합니다.
+    max_iter = 10
+    for _ in range(max_iter):
+        prev_payload = curr_payload
+        curr_payload = urllib.parse.unquote(curr_payload)
+        if prev_payload == curr_payload:
+            break
+            
     # 2) NULL 바이트 제거
-    decoded = decoded.replace("\x00", "")
+    decoded = curr_payload.replace("\x00", "")
+    
     # 3) 과도한 공백 정리
     decoded = " ".join(decoded.split())
+    
     return decoded.strip()
 
 
