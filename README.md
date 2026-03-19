@@ -115,7 +115,7 @@ Set-ExecutionPolicy RemoteSigned
 .\venv\Scripts\activate
 pip install -r requirements.txt
 
-copy .env.example .env
+copy env.example .env
 # .env 파일 열어서 OPENAI_API_KEY=sk-... 입력
 # community.rules 파일을 프로젝트 루트에 복사
 ```
